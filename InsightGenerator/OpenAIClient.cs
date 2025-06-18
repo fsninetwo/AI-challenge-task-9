@@ -40,9 +40,33 @@ internal sealed class OpenAIClient : IOpenAIClient, IDisposable
         var json = JsonSerializer.Serialize(body);
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
         using var response = await _httpClient.PostAsync("chat/completions", content);
-        response.EnsureSuccessStatusCode();
 
         var responseJson = await response.Content.ReadAsStringAsync();
+
+        // If the request failed, attempt to surface a helpful error message to the caller.
+        if (!response.IsSuccessStatusCode)
+        {
+            var status = (int)response.StatusCode;
+            string? serverMessage = null;
+
+            try
+            {
+                using var errDoc = JsonDocument.Parse(responseJson);
+                if (errDoc.RootElement.TryGetProperty("error", out var errNode) &&
+                    errNode.TryGetProperty("message", out var msgNode))
+                {
+                    serverMessage = msgNode.GetString();
+                }
+            }
+            catch
+            {
+                // Ignore JSON parsing errors; we'll fall back to raw response body.
+            }
+
+            var reason = string.IsNullOrWhiteSpace(serverMessage) ? response.ReasonPhrase : serverMessage;
+            throw new InvalidOperationException($"OpenAI request failed with status {status} ({response.ReasonPhrase}): {reason}");
+        }
+
         using var doc = JsonDocument.Parse(responseJson);
         var root = doc.RootElement;
 

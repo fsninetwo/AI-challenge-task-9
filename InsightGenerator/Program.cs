@@ -48,6 +48,13 @@ internal sealed class Program
                     var httpFactory = provider.GetRequiredService<IHttpClientFactory>();
                     var httpClient = httpFactory.CreateClient(nameof(OpenAIClient));
 
+                    // Optional organization header if provided in configuration
+                    var orgId = cfg["OpenAI:OrganizationId"];
+                    if (!string.IsNullOrWhiteSpace(orgId))
+                    {
+                        httpClient.DefaultRequestHeaders.Add("OpenAI-Organization", orgId);
+                    }
+
                     return new OpenAIClient(httpClient, apiKey, model) as IOpenAIClient;
                 });
 
