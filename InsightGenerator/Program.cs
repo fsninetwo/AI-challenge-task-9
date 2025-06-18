@@ -26,7 +26,7 @@ internal sealed class Program
 
                 // Register I/O modules
                 services.AddSingleton<IInputProvider, ConsoleInputProvider>();
-                services.AddSingleton<IOutputRenderer, ConsoleOutputRenderer>();
+                services.AddSingleton<IOutputRenderer, MarkdownOutputRenderer>();
 
                 // Register OpenAI client with HttpClientFactory and settings
                 services.AddHttpClient<IOpenAIClient, OpenAIClient>(client => { });
