@@ -1,84 +1,76 @@
 using InsightGenerator.IO;
 using InsightGenerator.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace InsightGenerator;
 
 internal sealed class Program
 {
-    private static async Task<int> Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
+        using IHost host = Host.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration(config =>
+            {
+                config.SetBasePath(AppContext.BaseDirectory)
+                      .AddJsonFile("appsettings.json", optional: true)
+                      .AddEnvironmentVariables();
+            })
+            .ConfigureServices((context, services) =>
+            {
+                IConfiguration config = context.Configuration;
+
+                // Register configuration so it's injectable
+                services.AddSingleton(config);
+
+                // Register I/O modules
+                services.AddSingleton<IInputProvider, ConsoleInputProvider>();
+                services.AddSingleton<IOutputRenderer, ConsoleOutputRenderer>();
+
+                // Register OpenAI client with HttpClientFactory and settings
+                services.AddHttpClient<IOpenAIClient, OpenAIClient>(client => { });
+
+                services.AddSingleton(provider =>
+                {
+                    var cfg = provider.GetRequiredService<IConfiguration>();
+                    var apiKey = cfg["OpenAI:ApiKey"];
+                    if (string.IsNullOrWhiteSpace(apiKey) || apiKey.Contains("${"))
+                        apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+                    if (string.IsNullOrWhiteSpace(apiKey))
+                    {
+                        throw new InvalidOperationException("OpenAI API Key is missing. Configure it via appsettings.json or environment variable.");
+                    }
+
+                    var model = cfg["OpenAI:Model"] ?? "gpt-3.5-turbo";
+
+                    // Resolve HttpClient via factory
+                    var httpFactory = provider.GetRequiredService<IHttpClientFactory>();
+                    var httpClient = httpFactory.CreateClient(nameof(OpenAIClient));
+
+                    return new OpenAIClient(httpClient, apiKey, model) as IOpenAIClient;
+                });
+
+                // Register application orchestrator
+                services.AddSingleton<InsightGeneratorApp>();
+            })
+            .Build();
+
         try
         {
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: true)
-                .AddEnvironmentVariables()
-                .Build();
-
-            var apiKey = configuration["OpenAI:ApiKey"];
-            if (string.IsNullOrWhiteSpace(apiKey) || apiKey.Contains("${"))
-                apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-
-            if (string.IsNullOrWhiteSpace(apiKey))
-            {
-                Fail("OpenAI API key not found. Provide it via appsettings.json (OpenAI:ApiKey) or OPENAI_API_KEY env variable.");
-                return 1;
-            }
-
-            var model = configuration["OpenAI:Model"] ?? "gpt-3.5-turbo";
-            var temperatureStr = configuration["OpenAI:Temperature"];
-            _ = double.TryParse(temperatureStr, out var temperature);
-            if (temperature <= 0)
-                temperature = 0.2;
-
             Console.WriteLine("===================================================");
             Console.WriteLine("  Digital Service Insight Generator (OpenAI GPT)  ");
             Console.WriteLine("===================================================\n");
 
-            // Resolve modules
-            IInputProvider inputProvider = new ConsoleInputProvider();
-            IOutputRenderer outputRenderer = new ConsoleOutputRenderer();
-
-            var (text, isServiceName) = inputProvider.GetInput();
-
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                Fail("Input cannot be empty.");
-                return 1;
-            }
-
-            var prompt = PromptBuilder.Build(text, isServiceName);
-
-            Console.WriteLine("\nGenerating insights with OpenAI...\n");
-
-            using var client = new OpenAIClient(apiKey, model);
-            var completion = await client.GetCompletionAsync(prompt, temperature);
-
-            outputRenderer.RenderRaw(completion);
-
-            if (InsightParser.TryParse(completion, out var insights) && insights != null)
-            {
-                outputRenderer.RenderInsights(insights);
-            }
-            else
-            {
-                Console.WriteLine("Unable to parse JSON. Displaying raw output above.");
-            }
-
-            return 0;
+            var app = host.Services.GetRequiredService<InsightGeneratorApp>();
+            return await app.RunAsync();
         }
         catch (Exception ex)
         {
-            Fail($"Unexpected error: {ex.Message}\n{ex.StackTrace}");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Fatal error: {ex.Message}\n{ex.StackTrace}");
+            Console.ResetColor();
             return -1;
         }
-    }
-
-    private static void Fail(string message)
-    {
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine("Error: " + message);
-        Console.ResetColor();
     }
 } 

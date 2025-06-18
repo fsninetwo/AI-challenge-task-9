@@ -7,21 +7,19 @@ namespace InsightGenerator;
 /// <summary>
 /// Minimal wrapper around OpenAI's chat completion endpoint.
 /// </summary>
-internal sealed class OpenAIClient : IDisposable
+internal sealed class OpenAIClient : IOpenAIClient, IDisposable
 {
     private const string DefaultModel = "gpt-3.5-turbo";
     private readonly HttpClient _httpClient;
     private readonly string _model;
 
-    public OpenAIClient(string apiKey, string? model = null)
+    public OpenAIClient(HttpClient httpClient, string apiKey, string? model = null)
     {
         if (string.IsNullOrWhiteSpace(apiKey))
             throw new ArgumentException("API key must be provided", nameof(apiKey));
 
-        _httpClient = new HttpClient
-        {
-            BaseAddress = new Uri("https://api.openai.com/v1/")
-        };
+        _httpClient = httpClient;
+        _httpClient.BaseAddress = new Uri("https://api.openai.com/v1/");
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         _model = string.IsNullOrWhiteSpace(model) ? DefaultModel : model!;
     }
