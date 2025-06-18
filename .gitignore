@@ -1,0 +1,54 @@
+## Ignore Visual Studio temporary files, build results, and
+## common .NET artifacts.
+
+# Build results
+bin/
+obj/
+
+# Visual Studio directories
+.vs/
+
+# Rider project settings
+.idea/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# NuGet packages
+*.nupkg
+packages/
+
+# Resharper
+*.DotSettings.user
+_Resharper*/
+
+# Others
+*.cache
+
+# Visual Studio Code settings
+.vscode/
+
+# VS Installer setup
+*.vsix
+
+# Coverage reports
+coverage*/
+
+# Azure Pipeline logs
+*.codeanalysis
+
+# Dotnet tool dotnet-watch
+*.*.hotreload.*
+
+# Local secrets
+Secrets.json 
