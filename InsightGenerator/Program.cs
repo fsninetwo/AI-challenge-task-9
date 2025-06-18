@@ -34,15 +34,18 @@ internal sealed class Program
             } while (choice != "1" && choice != "2");
 
             string userInput;
+            bool isServiceName;
             if (choice == "1")
             {
                 Console.WriteLine("\nPaste the service description below. Finish with a single blank line:");
                 userInput = ReadMultiLineInput();
+                isServiceName = false;
             }
             else
             {
                 Console.Write("\nEnter the service name: ");
                 userInput = Console.ReadLine() ?? string.Empty;
+                isServiceName = true;
             }
 
             if (string.IsNullOrWhiteSpace(userInput))
@@ -53,7 +56,7 @@ internal sealed class Program
                 return 1;
             }
 
-            var prompt = BuildPrompt(userInput);
+            var prompt = BuildPrompt(userInput, isServiceName);
 
             Console.WriteLine("\nGenerating insights with OpenAI...\n");
 
@@ -99,28 +102,51 @@ internal sealed class Program
         return string.Join('\n', lines);
     }
 
-    private static string BuildPrompt(string input)
+    private static string BuildPrompt(string input, bool isServiceName)
     {
-        return $$"""
-        As an expert product analyst, extract concise, structured insights about a digital service.
-
-        Input:
-        ###
-        {input}
-        ###
-
-        Respond ONLY in valid JSON with the following schema:
+        if (isServiceName)
         {
-          "service_name": string,
-          "overview": string,
-          "unique_value_proposition": string,
-          "target_audience": string,
-          "monetization_model": string,
-          "key_features": string[],
-          "growth_opportunities": string,
-          "risks_challenges": string
+            return $$"""
+            You are an expert product strategist.
+
+            Task: Provide concise, structured insights about the digital service **{input}** based on your existing knowledge (do NOT assume additional context from the user).
+
+            Respond ONLY in valid JSON with the following schema:
+            {
+              "service_name": string,
+              "overview": string,
+              "unique_value_proposition": string,
+              "target_audience": string,
+              "monetization_model": string,
+              "key_features": string[],
+              "growth_opportunities": string,
+              "risks_challenges": string
+            }
+            """;
         }
-        """;
+        else
+        {
+            return $$"""
+            As an expert product analyst, extract concise, structured insights about a digital service from the text provided below.
+
+            Input:
+            ###
+            {input}
+            ###
+
+            Respond ONLY in valid JSON with the following schema:
+            {
+              "service_name": string,
+              "overview": string,
+              "unique_value_proposition": string,
+              "target_audience": string,
+              "monetization_model": string,
+              "key_features": string[],
+              "growth_opportunities": string,
+              "risks_challenges": string
+            }
+            """;
+        }
     }
 
     private static bool TryParseInsights(string json, out Insight? insights)
