@@ -1,5 +1,6 @@
 using InsightGenerator.IO;
 using InsightGenerator.Services;
+using Microsoft.Extensions.Configuration;
 
 namespace InsightGenerator;
 
@@ -9,12 +10,27 @@ internal sealed class Program
     {
         try
         {
-            var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: true)
+                .AddEnvironmentVariables()
+                .Build();
+
+            var apiKey = configuration["OpenAI:ApiKey"];
+            if (string.IsNullOrWhiteSpace(apiKey) || apiKey.Contains("${"))
+                apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+
             if (string.IsNullOrWhiteSpace(apiKey))
             {
-                Fail("An OpenAI API key was not found. Please set the OPENAI_API_KEY environment variable and retry.");
+                Fail("OpenAI API key not found. Provide it via appsettings.json (OpenAI:ApiKey) or OPENAI_API_KEY env variable.");
                 return 1;
             }
+
+            var model = configuration["OpenAI:Model"] ?? "gpt-3.5-turbo";
+            var temperatureStr = configuration["OpenAI:Temperature"];
+            _ = double.TryParse(temperatureStr, out var temperature);
+            if (temperature <= 0)
+                temperature = 0.2;
 
             Console.WriteLine("===================================================");
             Console.WriteLine("  Digital Service Insight Generator (OpenAI GPT)  ");
@@ -36,8 +52,8 @@ internal sealed class Program
 
             Console.WriteLine("\nGenerating insights with OpenAI...\n");
 
-            using var client = new OpenAIClient(apiKey);
-            var completion = await client.GetCompletionAsync(prompt);
+            using var client = new OpenAIClient(apiKey, model);
+            var completion = await client.GetCompletionAsync(prompt, temperature);
 
             outputRenderer.RenderRaw(completion);
 
