@@ -14,13 +14,14 @@ internal static class PromptBuilder
             Respond ONLY in valid JSON with the following schema:
             {
               "service_name": string,
-              "overview": string,
-              "unique_value_proposition": string,
+              "brief_history": string,
               "target_audience": string,
-              "monetization_model": string,
-              "key_features": string[],
-              "growth_opportunities": string,
-              "risks_challenges": string
+              "core_features": string[],
+              "unique_selling_points": string,
+              "business_model": string,
+              "tech_stack_insights": string,
+              "perceived_strengths": string,
+              "perceived_weaknesses": string
             }
             """;
         }
@@ -37,13 +38,14 @@ internal static class PromptBuilder
             Respond ONLY in valid JSON with the following schema:
             {
               "service_name": string,
-              "overview": string,
-              "unique_value_proposition": string,
+              "brief_history": string,
               "target_audience": string,
-              "monetization_model": string,
-              "key_features": string[],
-              "growth_opportunities": string,
-              "risks_challenges": string
+              "core_features": string[],
+              "unique_selling_points": string,
+              "business_model": string,
+              "tech_stack_insights": string,
+              "perceived_strengths": string,
+              "perceived_weaknesses": string
             }
             """;
         }

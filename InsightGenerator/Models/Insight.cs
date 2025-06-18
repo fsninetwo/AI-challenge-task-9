@@ -2,11 +2,12 @@ namespace InsightGenerator.Models;
 
 public sealed record Insight(
     string ServiceName,
-    string Overview,
-    string UniqueValueProposition,
+    string BriefHistory,
     string TargetAudience,
-    string MonetizationModel,
-    List<string> KeyFeatures,
-    string GrowthOpportunities,
-    string RisksChallenges
+    List<string> CoreFeatures,
+    string UniqueSellingPoints,
+    string BusinessModel,
+    string TechStackInsights,
+    string PerceivedStrengths,
+    string PerceivedWeaknesses
 ); 
