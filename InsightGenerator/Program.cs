@@ -1,4 +1,5 @@
-using System.Text.Json;
+using InsightGenerator.IO;
+using InsightGenerator.Services;
 
 namespace InsightGenerator;
 
@@ -11,9 +12,7 @@ internal sealed class Program
             var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
             if (string.IsNullOrWhiteSpace(apiKey))
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Error: An OpenAI API key was not found. Please set the OPENAI_API_KEY environment variable and retry.");
-                Console.ResetColor();
+                Fail("An OpenAI API key was not found. Please set the OPENAI_API_KEY environment variable and retry.");
                 return 1;
             }
 
@@ -21,55 +20,30 @@ internal sealed class Program
             Console.WriteLine("  Digital Service Insight Generator (OpenAI GPT)  ");
             Console.WriteLine("===================================================\n");
 
-            // Ask the user which input mode they prefer
-            Console.WriteLine("Select input mode:");
-            Console.WriteLine("1) Paste description text (e.g., an 'About Us' section)");
-            Console.WriteLine("2) Enter the service\'s name");
-            Console.Write("Your choice (1 or 2): ");
+            // Resolve modules
+            IInputProvider inputProvider = new ConsoleInputProvider();
+            IOutputRenderer outputRenderer = new ConsoleOutputRenderer();
 
-            string? choice;
-            do
-            {
-                choice = Console.ReadLine();
-            } while (choice != "1" && choice != "2");
+            var (text, isServiceName) = inputProvider.GetInput();
 
-            string userInput;
-            bool isServiceName;
-            if (choice == "1")
+            if (string.IsNullOrWhiteSpace(text))
             {
-                Console.WriteLine("\nPaste the service description below. Finish with a single blank line:");
-                userInput = ReadMultiLineInput();
-                isServiceName = false;
-            }
-            else
-            {
-                Console.Write("\nEnter the service name: ");
-                userInput = Console.ReadLine() ?? string.Empty;
-                isServiceName = true;
-            }
-
-            if (string.IsNullOrWhiteSpace(userInput))
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Input cannot be empty.");
-                Console.ResetColor();
+                Fail("Input cannot be empty.");
                 return 1;
             }
 
-            var prompt = BuildPrompt(userInput, isServiceName);
+            var prompt = PromptBuilder.Build(text, isServiceName);
 
             Console.WriteLine("\nGenerating insights with OpenAI...\n");
 
             using var client = new OpenAIClient(apiKey);
             var completion = await client.GetCompletionAsync(prompt);
 
-            Console.WriteLine("Raw AI Output:\n----------------");
-            Console.WriteLine(completion);
+            outputRenderer.RenderRaw(completion);
 
-            Console.WriteLine("\nParsed Insights:\n----------------");
-            if (TryParseInsights(completion, out var insights))
+            if (InsightParser.TryParse(completion, out var insights) && insights != null)
             {
-                DisplayInsights(insights);
+                outputRenderer.RenderInsights(insights);
             }
             else
             {
@@ -80,134 +54,15 @@ internal sealed class Program
         }
         catch (Exception ex)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Unexpected error: {ex.Message}\n{ex.StackTrace}");
-            Console.ResetColor();
+            Fail($"Unexpected error: {ex.Message}\n{ex.StackTrace}");
             return -1;
         }
     }
 
-    private static string ReadMultiLineInput()
+    private static void Fail(string message)
     {
-        var lines = new List<string>();
-        string? line;
-        while (true)
-        {
-            line = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(line))
-                break;
-            lines.Add(line);
-        }
-
-        return string.Join('\n', lines);
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("Error: " + message);
+        Console.ResetColor();
     }
-
-    private static string BuildPrompt(string input, bool isServiceName)
-    {
-        if (isServiceName)
-        {
-            return $$"""
-            You are an expert product strategist.
-
-            Task: Provide concise, structured insights about the digital service **{input}** based on your existing knowledge (do NOT assume additional context from the user).
-
-            Respond ONLY in valid JSON with the following schema:
-            {
-              "service_name": string,
-              "overview": string,
-              "unique_value_proposition": string,
-              "target_audience": string,
-              "monetization_model": string,
-              "key_features": string[],
-              "growth_opportunities": string,
-              "risks_challenges": string
-            }
-            """;
-        }
-        else
-        {
-            return $$"""
-            As an expert product analyst, extract concise, structured insights about a digital service from the text provided below.
-
-            Input:
-            ###
-            {input}
-            ###
-
-            Respond ONLY in valid JSON with the following schema:
-            {
-              "service_name": string,
-              "overview": string,
-              "unique_value_proposition": string,
-              "target_audience": string,
-              "monetization_model": string,
-              "key_features": string[],
-              "growth_opportunities": string,
-              "risks_challenges": string
-            }
-            """;
-        }
-    }
-
-    private static bool TryParseInsights(string json, out Insight? insights)
-    {
-        try
-        {
-            insights = JsonSerializer.Deserialize<Insight>(json, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-            return insights != null;
-        }
-        catch
-        {
-            insights = null;
-            return false;
-        }
-    }
-
-    private static void DisplayInsights(Insight insights)
-    {
-        void WriteHeader(string header)
-        {
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine(header);
-            Console.ResetColor();
-        }
-
-        WriteHeader($"Service: {insights.ServiceName}\n");
-        WriteHeader("Overview:");
-        Console.WriteLine(insights.Overview + "\n");
-
-        WriteHeader("Unique Value Proposition:");
-        Console.WriteLine(insights.UniqueValueProposition + "\n");
-
-        WriteHeader("Target Audience:");
-        Console.WriteLine(insights.TargetAudience + "\n");
-
-        WriteHeader("Monetization Model:");
-        Console.WriteLine(insights.MonetizationModel + "\n");
-
-        WriteHeader("Key Features:");
-        foreach (var feature in insights.KeyFeatures ?? new List<string>())
-            Console.WriteLine($" - {feature}");
-        Console.WriteLine();
-
-        WriteHeader("Growth Opportunities:");
-        Console.WriteLine(insights.GrowthOpportunities + "\n");
-
-        WriteHeader("Risks & Challenges:");
-        Console.WriteLine(insights.RisksChallenges + "\n");
-    }
-
-    private record Insight(
-        string ServiceName,
-        string Overview,
-        string UniqueValueProposition,
-        string TargetAudience,
-        string MonetizationModel,
-        List<string> KeyFeatures,
-        string GrowthOpportunities,
-        string RisksChallenges
-    );
 } 
