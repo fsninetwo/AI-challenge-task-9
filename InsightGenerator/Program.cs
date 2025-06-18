@@ -43,6 +43,7 @@ internal sealed class Program
                     }
 
                     var model = cfg["OpenAI:Model"] ?? "gpt-3.5-turbo";
+                    var baseUrl = cfg["OpenAI:BaseUrl"];
 
                     // Resolve HttpClient via factory
                     var httpFactory = provider.GetRequiredService<IHttpClientFactory>();
@@ -55,7 +56,7 @@ internal sealed class Program
                         httpClient.DefaultRequestHeaders.Add("OpenAI-Organization", orgId);
                     }
 
-                    return new OpenAIClient(httpClient, apiKey, model) as IOpenAIClient;
+                    return new OpenAIClient(httpClient, apiKey, model, baseUrl) as IOpenAIClient;
                 });
 
                 // Register application orchestrator

@@ -10,16 +10,21 @@ namespace InsightGenerator;
 internal sealed class OpenAIClient : IOpenAIClient, IDisposable
 {
     private const string DefaultModel = "gpt-3.5-turbo";
+    private const string DefaultBaseUrl = "https://api.openai.com/v1/";
+
     private readonly HttpClient _httpClient;
     private readonly string _model;
 
-    public OpenAIClient(HttpClient httpClient, string apiKey, string? model = null)
+    public OpenAIClient(HttpClient httpClient, string apiKey, string? model = null, string? baseUrl = null)
     {
         if (string.IsNullOrWhiteSpace(apiKey))
             throw new ArgumentException("API key must be provided", nameof(apiKey));
 
         _httpClient = httpClient;
-        _httpClient.BaseAddress = new Uri("https://api.openai.com/v1/");
+
+        var resolvedBaseUrl = string.IsNullOrWhiteSpace(baseUrl) ? DefaultBaseUrl : baseUrl.TrimEnd('/') + "/";
+        _httpClient.BaseAddress = new Uri(resolvedBaseUrl);
+
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         _model = string.IsNullOrWhiteSpace(model) ? DefaultModel : model!;
     }
