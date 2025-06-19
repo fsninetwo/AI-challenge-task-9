@@ -25,47 +25,52 @@ internal sealed class InsightGeneratorApp
 
     public async Task<int> RunAsync()
     {
-        var (text, isServiceName) = _inputProvider.GetInput();
-        if (string.IsNullOrWhiteSpace(text))
+        while (true)
         {
-            Fail("Input cannot be empty.");
-            return 1;
-        }
+            var (text, isServiceName) = _inputProvider.GetInput();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                _outputRenderer.RenderRaw("Goodbye!\n");
+                break; // Exit requested
+            }
 
-        var prompt = PromptBuilder.Build(text, isServiceName);
+            var prompt = PromptBuilder.Build(text, isServiceName);
 
-        var temperatureStr = _configuration["OpenAI:Temperature"];
-        _ = double.TryParse(temperatureStr, out var temperature);
-        if (temperature <= 0)
-            temperature = 0.2;
+            var temperatureStr = _configuration["OpenAI:Temperature"];
+            _ = double.TryParse(temperatureStr, out var temperature);
+            if (temperature <= 0)
+                temperature = 0.2;
 
-        _outputRenderer.RenderRaw("Generating insights with OpenAI → please wait\n\n");
+            _outputRenderer.RenderRaw("Generating insights with OpenAI → please wait\n\n");
 
-        // Show a spinner while waiting for the network call
-        using var cts = new CancellationTokenSource();
-        var spinnerTask = Task.Run(() => Spinner(cts.Token));
+            // Spinner while waiting
+            using var cts = new CancellationTokenSource();
+            var spinnerTask = Task.Run(() => Spinner(cts.Token));
 
-        string completion;
-        try
-        {
-            completion = await _openAI.GetCompletionAsync(prompt, temperature);
-        }
-        finally
-        {
-            cts.Cancel();      // signal spinner to stop
-            await spinnerTask; // wait for spinner to finish
-            Console.WriteLine(); // move to next line after spinner
-        }
+            string completion;
+            try
+            {
+                completion = await _openAI.GetCompletionAsync(prompt, temperature);
+            }
+            finally
+            {
+                cts.Cancel();
+                await spinnerTask;
+                Console.WriteLine();
+            }
 
-        _outputRenderer.RenderRaw(completion);
+            _outputRenderer.RenderRaw(completion);
 
-        if (InsightParser.TryParse(completion, out var insights) && insights != null)
-        {
-            _outputRenderer.RenderInsights(insights);
-        }
-        else
-        {
-            Console.WriteLine("Unable to parse JSON. Displaying raw output above.");
+            if (InsightParser.TryParse(completion, out var insights) && insights != null)
+            {
+                _outputRenderer.RenderInsights(insights);
+            }
+            else
+            {
+                Console.WriteLine("Unable to parse JSON. Displaying raw output above.");
+            }
+
+            Console.WriteLine(); // blank line before next iteration
         }
 
         return 0;
