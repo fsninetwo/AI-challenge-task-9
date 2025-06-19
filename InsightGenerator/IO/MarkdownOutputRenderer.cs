@@ -7,6 +7,7 @@ namespace InsightGenerator.IO;
 internal sealed class MarkdownOutputRenderer : IOutputRenderer
 {
     private readonly IConfiguration _config;
+    private static readonly object _fileLock = new object();
 
     public MarkdownOutputRenderer(IConfiguration config)
     {
@@ -31,15 +32,25 @@ internal sealed class MarkdownOutputRenderer : IOutputRenderer
         {
             try
             {
-                File.WriteAllText(path, markdown);
+                // Use a lock to prevent multiple threads from writing simultaneously
+                lock (_fileLock)
+                {
+                    // Add timestamp separator
+                    var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    var separator = $"\n\n---\n### Generated at {timestamp}\n\n";
+                    
+                    // Append the new content with timestamp
+                    File.AppendAllText(path, separator + markdown);
+                }
+
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"\nReport saved to {Path.GetFullPath(path)}");
+                Console.WriteLine($"\nResults appended to {Path.GetFullPath(path)}");
                 Console.ResetColor();
             }
             catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"Could not write report file: {ex.Message}");
+                Console.WriteLine($"Could not write to output file: {ex.Message}");
                 Console.ResetColor();
             }
         }
