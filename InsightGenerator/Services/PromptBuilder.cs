@@ -54,11 +54,12 @@ internal static class PromptBuilder
               "perceived_weaknesses": string
             }
 
-            Response instructions:
-            • Produce ONLY a single valid JSON object (no markdown, no triple back-ticks).
-            • Carefully read the source content and derive each field from it whenever possible.
-            • Only use the string "unknown" if the source truly lacks the information; do NOT default to "unknown" for every field.
-            • Do not invent facts that contradict the source.
+            Guidelines:
+            • Produce ONLY the JSON object – no markdown, no triple back-ticks.
+            • Fill each field drawing from the description; you may infer logical details (e.g., target audience for a music streaming service is "music listeners").
+            • Use the string "unknown" ONLY if the description provides no clues and inference would be unreasonable.
+            • Ensure "core_features" is a JSON array of short strings.
+            - If the service name is not explicitly provided, create a concise descriptive placeholder such as "Unnamed Music Streaming Service" instead of "unknown".
             """;
         }
     }
