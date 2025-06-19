@@ -6,9 +6,12 @@ A lightweight C# console application that leverages the OpenAI Chat Completion A
 
 ## Features
 
+* Interactive **multi-run loop** – analyse multiple services in one session
 * Accepts either:
-  * A block of descriptive text (e.g., an "About Us" section), **or**
-  * Just the service name
+  * A block of descriptive text (multi-line paste supported)
+  * A service name only
+* Clean exit via menu option **3) Exit** or typing **q / quit / exit**
+* Animated spinner while waiting for OpenAI – no more frozen console
 * Generates comprehensive analysis including:
   * 📅 Brief History (founding year, milestones)
   * 👥 Target Audience (primary user segments)
@@ -17,7 +20,7 @@ A lightweight C# console application that leverages the OpenAI Chat Completion A
   * 💰 Business Model (revenue streams)
   * 🔧 Tech Stack Insights (technologies used)
   * 📊 Strengths & Weaknesses analysis
-* Outputs beautifully formatted markdown reports
+* Outputs beautifully formatted markdown reports appended to a file
 
 ## Prerequisites
 
@@ -68,23 +71,30 @@ A lightweight C# console application that leverages the OpenAI Chat Completion A
 
 3. **Using the Application**
    
-   The app will present two options:
+   The app now presents three options and stays running until you choose to exit:
 
    ```
    Select input mode:
    1) Paste description text (e.g., an 'About Us' section)
    2) Enter the service's name
+   3) Exit
    ```
 
    * **Option 1: Paste Description**
      - Choose `1`
-     - Paste your text (multiple lines allowed)
-     - Send a blank line to finish input
+     - Paste your text (multiple lines allowed, press **Enter** on an empty line to finish)
 
    * **Option 2: Service Name**
      - Choose `2`
      - Type the name (e.g., "Spotify", "Slack")
      - Press Enter
+
+   * **Option 3 / q / quit / exit**
+      - Cleanly stops the program
+
+   After each analysis finishes, the menu re-appears automatically so you can process another service without restarting the app.
+
+   During the call to OpenAI you'll see a small spinner (| / – \) so you know the request is in progress.
 
 4. **Output**
    
