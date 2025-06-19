@@ -3,6 +3,7 @@ using InsightGenerator.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace InsightGenerator;
 
@@ -16,6 +17,13 @@ internal sealed class Program
                 config.SetBasePath(AppContext.BaseDirectory)
                       .AddJsonFile("appsettings.json", optional: true)
                       .AddEnvironmentVariables();
+            })
+            .ConfigureLogging(logging =>
+            {
+                // Remove default console logger noise (e.g., HttpClient diagnostic messages)
+                logging.ClearProviders();
+                logging.AddSimpleConsole();
+                logging.SetMinimumLevel(LogLevel.Warning);
             })
             .ConfigureServices((context, services) =>
             {
