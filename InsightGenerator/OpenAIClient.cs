@@ -75,11 +75,31 @@ internal sealed class OpenAIClient : IOpenAIClient, IDisposable
         using var doc = JsonDocument.Parse(responseJson);
         var root = doc.RootElement;
 
-        var messageContent = root.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
+        string? messageContent = null;
+
+        // Chat completion format (preferred)
+        if (root.TryGetProperty("choices", out var choicesElem) && choicesElem.GetArrayLength() > 0)
+        {
+            var first = choicesElem[0];
+
+            // Chat response
+            if (first.TryGetProperty("message", out var msgElem) &&
+                msgElem.TryGetProperty("content", out var contentElem))
+            {
+                messageContent = contentElem.GetString();
+            }
+
+            // Fallback: legacy completion API sometimes returns "text"
+            if (string.IsNullOrWhiteSpace(messageContent) && first.TryGetProperty("text", out var textElem))
+            {
+                messageContent = textElem.GetString();
+            }
+        }
+
         if (string.IsNullOrWhiteSpace(messageContent))
             throw new InvalidOperationException("Received empty completion from OpenAI.");
 
-        return messageContent.Trim();
+        return messageContent!.Trim();
     }
 
     public void Dispose()

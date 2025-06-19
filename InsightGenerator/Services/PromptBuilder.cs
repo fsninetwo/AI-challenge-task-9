@@ -23,6 +23,12 @@ internal static class PromptBuilder
               "perceived_strengths": string,
               "perceived_weaknesses": string
             }
+
+            Response instructions:
+            • Produce ONLY a single valid JSON object (no markdown, no triple back-ticks).
+            • Carefully read the source content and derive each field from it whenever possible.
+            • Only use the string "unknown" if the source truly lacks the information; do NOT default to "unknown" for every field.
+            • Do not invent facts that contradict the source.
             """;
         }
         else
@@ -47,6 +53,12 @@ internal static class PromptBuilder
               "perceived_strengths": string,
               "perceived_weaknesses": string
             }
+
+            Response instructions:
+            • Produce ONLY a single valid JSON object (no markdown, no triple back-ticks).
+            • Carefully read the source content and derive each field from it whenever possible.
+            • Only use the string "unknown" if the source truly lacks the information; do NOT default to "unknown" for every field.
+            • Do not invent facts that contradict the source.
             """;
         }
     }

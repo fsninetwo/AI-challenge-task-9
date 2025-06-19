@@ -20,7 +20,8 @@ internal static class MarkdownBuilder
 
         // Target Audience with bullet points if multiple segments
         sb.AppendLine("## 👥 Target Audience");
-        var audiences = insight.TargetAudience.Split(',', ';')
+        var audiences = (insight.TargetAudience ?? string.Empty)
+            .Split(',', ';')
             .Select(a => a.Trim())
             .Where(a => !string.IsNullOrWhiteSpace(a));
         
@@ -41,7 +42,8 @@ internal static class MarkdownBuilder
         {
             for (int i = 0; i < insight.CoreFeatures.Count; i++)
             {
-                sb.AppendLine($"{i + 1}. {insight.CoreFeatures[i].TrimStart('-', '*', '•').Trim()}");
+                var feature = insight.CoreFeatures[i] ?? string.Empty;
+                sb.AppendLine($"{i + 1}. {feature.TrimStart('-', '*', '•').Trim()}");
             }
         }
         sb.AppendLine();
@@ -58,7 +60,8 @@ internal static class MarkdownBuilder
 
         // Tech Stack with bullet points if multiple technologies
         sb.AppendLine("## 🔧 Tech Stack Insights");
-        var techItems = insight.TechStackInsights.Split(',', ';')
+        var techItems = (insight.TechStackInsights ?? string.Empty)
+            .Split(',', ';')
             .Select(t => t.Trim())
             .Where(t => !string.IsNullOrWhiteSpace(t));
         

@@ -43,6 +43,6 @@ internal sealed class ConsoleInputProvider : IInputProvider
             lines.Add(line);
         }
 
-        return string.Join('\n', lines);
+        return string.Join(' ', lines);
     }
 } 
