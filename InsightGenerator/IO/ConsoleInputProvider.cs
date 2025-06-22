@@ -15,7 +15,13 @@ internal sealed class ConsoleInputProvider : IInputProvider
         string? choice;
         while (true)
         {
-            choice = Console.ReadLine()?.Trim().ToLowerInvariant();
+            var raw = Console.ReadLine();
+
+            // End-of-stream (e.g. redirected file) – treat as graceful exit
+            if (raw is null)
+                return (string.Empty, false);
+
+            choice = raw.Trim().ToLowerInvariant();
             if (choice is "1" or "2")
                 break;
             if (choice is "3" or "q" or "quit" or "exit")
@@ -33,8 +39,11 @@ internal sealed class ConsoleInputProvider : IInputProvider
         else
         {
             Console.Write("\nEnter the service name: ");
-            var name = Console.ReadLine() ?? string.Empty;
-            return (name, true);
+            var nameLine = Console.ReadLine();
+            if (nameLine is null)
+                return (string.Empty, false); // end of stream – exit
+
+            return (nameLine, true);
         }
     }
 
@@ -45,7 +54,9 @@ internal sealed class ConsoleInputProvider : IInputProvider
         while (true)
         {
             line = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(line))
+
+            // End-of-stream means user finished entering text.
+            if (line is null || string.IsNullOrWhiteSpace(line))
                 break;
             lines.Add(line);
         }

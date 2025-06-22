@@ -37,7 +37,8 @@ internal sealed class MarkdownOutputRenderer : IOutputRenderer
                 {
                     // Add timestamp separator
                     var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                    var separator = $"\n\n---\n### Generated at {timestamp}\n\n";
+                    var serviceLabel = string.IsNullOrWhiteSpace(insights.ServiceName) ? "(unknown)" : insights.ServiceName;
+                    var separator = $"\n\n---\n### Generated at {timestamp} | Input: {serviceLabel}\n\n";
                     
                     // Append the new content with timestamp
                     File.AppendAllText(path, separator + markdown);

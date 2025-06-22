@@ -9,17 +9,18 @@ internal static class MarkdownBuilder
     {
         var sb = new StringBuilder();
 
-        // Header with service name and divider
-        sb.AppendLine($"# {insight.ServiceName} – Digital Service Analysis");
+        // Header with service name and divider (use plain hyphen to avoid Unicode issues)
+        var title = string.IsNullOrWhiteSpace(insight.ServiceName) ? "Unknown" : insight.ServiceName.Trim();
+        sb.AppendLine($"# {title} - Digital Service Analysis");
         sb.AppendLine("\n---\n");
 
         // Brief History section with formatting for milestones
-        sb.AppendLine("## 📅 Brief History");
+        sb.AppendLine("## Brief History");
         sb.AppendLine(FormatParagraph(insight.BriefHistory));
         sb.AppendLine();
 
         // Target Audience with bullet points if multiple segments
-        sb.AppendLine("## 👥 Target Audience");
+        sb.AppendLine("## Target Audience");
         var audiences = (insight.TargetAudience ?? string.Empty)
             .Split(',', ';')
             .Select(a => a.Trim())
@@ -37,7 +38,7 @@ internal static class MarkdownBuilder
         sb.AppendLine();
 
         // Core Features with numbered list
-        sb.AppendLine("## ⭐ Core Features");
+        sb.AppendLine("## Core Features");
         if (insight.CoreFeatures?.Any() == true)
         {
             for (int i = 0; i < insight.CoreFeatures.Count; i++)
@@ -49,17 +50,17 @@ internal static class MarkdownBuilder
         sb.AppendLine();
 
         // Unique Selling Points with emphasis
-        sb.AppendLine("## 🎯 Unique Selling Points");
+        sb.AppendLine("## Unique Selling Points");
         sb.AppendLine(FormatParagraph(insight.UniqueSellingPoints));
         sb.AppendLine();
 
         // Business Model with clear structure
-        sb.AppendLine("## 💰 Business Model");
+        sb.AppendLine("## Business Model");
         sb.AppendLine(FormatParagraph(insight.BusinessModel));
         sb.AppendLine();
 
         // Tech Stack with bullet points if multiple technologies
-        sb.AppendLine("## 🔧 Tech Stack Insights");
+        sb.AppendLine("## Tech Stack Insights");
         var techItems = (insight.TechStackInsights ?? string.Empty)
             .Split(',', ';')
             .Select(t => t.Trim())
@@ -77,10 +78,10 @@ internal static class MarkdownBuilder
         sb.AppendLine();
 
         // Strengths and Weaknesses in a clear comparison
-        sb.AppendLine("## 📊 Strengths & Weaknesses");
-        sb.AppendLine("\n### Strengths ✅");
+        sb.AppendLine("## Strengths & Weaknesses");
+        sb.AppendLine("\n### Strengths");
         sb.AppendLine(FormatParagraph(insight.PerceivedStrengths));
-        sb.AppendLine("\n### Weaknesses ⚠️");
+        sb.AppendLine("\n### Weaknesses");
         sb.AppendLine(FormatParagraph(insight.PerceivedWeaknesses));
         sb.AppendLine();
 
@@ -93,7 +94,7 @@ internal static class MarkdownBuilder
 
     private static string FormatParagraph(string? content)
     {
-        if (string.IsNullOrWhiteSpace(content))
+        if (string.IsNullOrWhiteSpace(content) || content.Trim().Equals("unknown", StringComparison.OrdinalIgnoreCase))
             return "_No information available_";
 
         // Clean up any markdown list markers at the start of lines
