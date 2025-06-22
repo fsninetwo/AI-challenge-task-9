@@ -63,20 +63,6 @@ internal sealed class InsightGeneratorApp
 
             if (InsightParser.TryParse(completion, out var insights) && insights != null)
             {
-
-                // Fallback: if the parsed object lacks a valid service name, but the user provided
-                // one explicitly, use the input as the service name so the markdown output is not blank.
-                if (isServiceName && !string.IsNullOrWhiteSpace(text))
-                {
-                    var desired = text.Trim();
-                    if (string.IsNullOrWhiteSpace(insights.ServiceName) ||
-                        insights.ServiceName.Equals("unknown", StringComparison.OrdinalIgnoreCase) ||
-                        !insights.ServiceName.Equals(desired, StringComparison.OrdinalIgnoreCase))
-                    {
-                        insights = insights with { ServiceName = desired };
-                    }
-                }
-
                 _outputRenderer.RenderInsights(insights);
             }
             else
