@@ -15,7 +15,14 @@ internal sealed class ConsoleInputProvider : IInputProvider
         string? choice;
         while (true)
         {
-            choice = Console.ReadLine()?.Trim().ToLowerInvariant();
+            var raw = Console.ReadLine();
+            if (raw is null)
+            {
+                // End-of-input (e.g., piped file ended). Treat as a request to exit.
+                return (string.Empty, false);
+            }
+
+            choice = raw.Trim().ToLowerInvariant();
             if (choice is "1" or "2")
                 break;
             if (choice is "3" or "q" or "quit" or "exit")
