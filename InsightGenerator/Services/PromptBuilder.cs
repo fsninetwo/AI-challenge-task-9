@@ -59,7 +59,7 @@ internal static class PromptBuilder
             • Fill each field drawing from the description; you may infer logical details (e.g., target audience for a music streaming service is "music listeners").
             • Use the string "unknown" ONLY if the description provides no clues and inference would be unreasonable.
             • Ensure "core_features" is a JSON array of short strings.
-            - If the service name is not explicitly provided, create a concise descriptive placeholder such as "Unnamed Music Streaming Service" instead of "unknown".
+            - If the service name is not explicitly provided, create a concise descriptive placeholder such as "Unnamed Digital Service" instead of "unknown".
             """;
         }
     }
